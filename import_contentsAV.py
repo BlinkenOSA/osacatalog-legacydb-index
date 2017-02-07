@@ -246,6 +246,9 @@ def make_json(row):
     if row["Description"] is not None:
         j["contentsSummary"] = row["Description"]
 
+    if row["Description2"] is not None:
+        j["contentsSummaryOriginal"] = row["Description2"]
+
     time_start = row["TimeStart"]
     if time_start is not None:
         j["timeStart"] = "%02d:%02d:%02d" % (time_start.hour, time_start.minute, time_start.second)
