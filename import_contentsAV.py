@@ -96,14 +96,19 @@ def main():
 
 def make_solr_document(row):
     hashids = Hashids(salt="osacontent", min_length=8)
-    j = make_json(row)
+    j_eng = make_json(row)
+    j_2nd = make_json(row, lang='hun')
+
+    item_json = {'item_json_eng': j_eng}
+    if j_2nd:
+        item_json['item_json_2nd'] = j_2nd
 
     identifier = hashids.encode(row["ContainerID"] * 1000 + int(row["SequenceNo"]))
 
     doc = {
         "id": identifier,
-        "item_json": json.dumps(j),
-        "item_json_e": base64.b64encode(json.dumps(j)),
+        "item_json": json.dumps(item_json),
+        "item_json_e": base64.b64encode(json.dumps(item_json)),
 
         "record_origin": "Archives",
         "record_origin_facet": "Archives",
@@ -114,10 +119,10 @@ def make_solr_document(row):
         "description_level": "Item",
         "description_level_facet": "Item",
 
-        "title": j["title"],
-        "title_e": json.dumps(j["title"])[1:-1],
-        "title_search": j["title"].strip() if j["title"] else None,
-        "title_sort": j["title"],
+        "title": j_eng["title"],
+        "title_e": json.dumps(j_eng["title"])[1:-1],
+        "title_search": j_eng["title"].strip() if j_eng["title"] else None,
+        "title_sort": j_eng["title"],
 
         "fonds_sort": row["FondsID"],
         "subfonds_sort": row["SubfondsID"],
@@ -130,6 +135,7 @@ def make_solr_document(row):
         "container_number_sort": row["ContainerNo"],
 
         "contents_summary_search": remove_control_chars(row["Description"]) if row["Description"] else None,
+        "contents_summary_search_hu": remove_control_chars(row["Description2"]) if row["Description2"] else None,
 
         "sequence_number": row["SequenceNo"],
         "sequence_number_sort": row["SequenceNo"],
@@ -150,8 +156,8 @@ def make_solr_document(row):
     if cdate != "":
         doc["creation_date"] = cdate
 
-    if j["contributors"]:
-        for contributor in j["contributors"]:
+    if j_eng["contributors"]:
+        for contributor in j_eng["contributors"]:
             if contributor["role"] == "Director" or contributor == "Creator/Author":
                 doc["creator"] = contributor["name"]
                 doc["creator_search"] = contributor["name"]
@@ -159,107 +165,112 @@ def make_solr_document(row):
                 doc["creator_facet"] = contributor["name"]
                 doc["director"] = contributor["name"]
 
-    if "form_genre" in j.keys():
-        doc["genre_facet"] = j["form_genre"]
+    if "form_genre" in j_eng.keys():
+        doc["genre_facet"] = j_eng["form_genre"]
 
-    if j["language"]:
-        doc["language_facet"] = j["language"]
+    if j_eng["language"]:
+        doc["language_facet"] = j_eng["language"]
 
-    if "associatedCountry" in j.keys():
-        doc["associated_country_search"] = j["associatedCountry"]
-        doc["added_geo_facet"] = j["associatedCountry"]
+    if "associatedCountry" in j_eng.keys():
+        doc["associated_country_search"] = j_eng["associatedCountry"]
+        doc["added_geo_facet"] = j_eng["associatedCountry"]
 
-    if "titleOriginal" in j.keys():
-        doc["title_original"] = j["titleOriginal"]
-        doc["title_original_search"] = j["titleOriginal"]
+    if "titleOriginal" in j_eng.keys():
+        doc["title_original"] = j_eng["titleOriginal"]
+        doc["title_original_search"] = j_eng["titleOriginal"]
 
     return doc
 
 
-def make_json(row):
-    hashids = Hashids(salt="osacontentav", min_length=8)
-    j = {"id": hashids.encode(row["ContainerID"] * 1000 + int(row["SequenceNo"]))}
+def make_json(row, lang='eng'):
+    if lang == 'eng':
+        hashids = Hashids(salt="osacontentav", min_length=8)
+        j = {"id": hashids.encode(row["ContainerID"] * 1000 + int(row["SequenceNo"]))}
 
-    if row["Title"] is not None:
-        if row["Title2"] is not None:
-            title = row["Title2"]
-            j["titleOriginal"] = row["Title"]
+        if row["Title"] is not None:
+            if row["Title2"] is not None:
+                title = row["Title2"]
+                j["titleOriginal"] = row["Title"]
+            else:
+                title = row["Title"]
         else:
-            title = row["Title"]
+            title = row["Title2"]
+
+        j["title"] = remove_control_chars(title)
+
+        if row["SequenceInformation"]:
+            j["title"] = row["SequenceInformation"] + ' ' + title
+
+        j["level"] = "Item"
+        j["primaryType"] = "Moving Image"
+
+        j["containerNumber"] = row["ContainerNo"]
+        j["containerType"] = row["ContainerType"]
+        j["sequenceNumber"] = row["SequenceNo"]
+        j["seriesReferenceCode"] = '-'.join((str(row["FondsID"]), str(row["SubfondsID"]), str(row["SeriesID"])))
+
+        if make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"]) != "":
+            j["dateFrom"] = make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"])
+
+        if row["Notes"] is not None:
+            j["note"] = row["Notes"]
+
+        j["dates"] = []
+        production_date = make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"])
+        if production_date != "":
+            j["dates"].append({"dateType": "Date of Production", "date": production_date})
+
+        air_date = make_date(row["YearAir"], row["MonthAir"], row["DayAir"])
+        if air_date != "":
+            j["dates"].append({"dateType": "Date Aired", "date": air_date})
+
+        if row["ProgramType"] is not None:
+            j["form_genre"] = row["ProgramType"]
+
+        contributor = select_contributor(row["ContainerID"], row["ContainerNo"])
+        if contributor is not None:
+            j["contributors"] = contributor
+
+        if row["Country"] is not None:
+            j["associatedCountry"] = row["Country"]
+
+        language = []
+        if row["Language"] is not None:
+            language.append(row["Language"])
+
+        lang = select_languages(row["ContainerID"], row["ContainerNo"])
+        if lang is not None:
+            for l in lang:
+                language.append(l)
+
+        if language is not None:
+            j["language"] = language
+
+        language_statement = select_language_statement(row["ContainerID"], row["ContainerNo"])
+        if language_statement is not None:
+            j["languageStatement"] = "; ".join(language_statement)
+
+        if row["Description"] is not None:
+            j["contentsSummary"] = row["Description"]
+
+        time_start = row["TimeStart"]
+        if time_start is not None:
+            j["timeStart"] = "%02d:%02d:%02d" % (time_start.hour, time_start.minute, time_start.second)
+
+        time_end = row["TimeEnd"]
+        if time_end is not None:
+            j["timeEnd"] = "%02d:%02d:%02d" % (time_end.hour, time_end.minute, time_end.second)
+
+        duration = row["Duration"]
+        if duration is not None:
+            j["duration"] = "%02d:%02d:%02d" % (duration.hour, duration.minute, duration.second)
+
     else:
-        title = row["Title2"]
+        j = {}
 
-    j["title"] = remove_control_chars(title)
-
-    if row["SequenceInformation"]:
-        j["title"] = row["SequenceInformation"] + ' ' + title
-
-    j["level"] = "Item"
-    j["primaryType"] = "Moving Image"
-
-    j["containerNumber"] = row["ContainerNo"]
-    j["containerType"] = row["ContainerType"]
-    j["sequenceNumber"] = row["SequenceNo"]
-    j["seriesReferenceCode"] = '-'.join((str(row["FondsID"]), str(row["SubfondsID"]), str(row["SeriesID"])))
-
-    if make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"]) != "":
-        j["dateFrom"] = make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"])
-
-    if row["Notes"] is not None:
-        j["note"] = row["Notes"]
-
-    j["dates"] = []
-    production_date = make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"])
-    if production_date != "":
-        j["dates"].append({"dateType": "Date of Production", "date": production_date})
-
-    air_date = make_date(row["YearAir"], row["MonthAir"], row["DayAir"])
-    if air_date != "":
-        j["dates"].append({"dateType": "Date Aired", "date": air_date})
-
-    if row["ProgramType"] is not None:
-        j["form_genre"] = row["ProgramType"]
-
-    contributor = select_contributor(row["ContainerID"], row["ContainerNo"])
-    if contributor is not None:
-        j["contributors"] = contributor
-
-    if row["Country"] is not None:
-        j["associatedCountry"] = row["Country"]
-
-    language = []
-    if row["Language"] is not None:
-        language.append(row["Language"])
-
-    lang = select_languages(row["ContainerID"], row["ContainerNo"])
-    if lang is not None:
-        for l in lang:
-            language.append(l)
-
-    if language is not None:
-        j["language"] = language
-
-    language_statement = select_language_statement(row["ContainerID"], row["ContainerNo"])
-    if language_statement is not None:
-        j["languageStatement"] = "; ".join(language_statement)
-
-    if row["Description"] is not None:
-        j["contentsSummary"] = row["Description"]
-
-    if row["Description2"] is not None:
-        j["contentsSummaryOriginal"] = row["Description2"]
-
-    time_start = row["TimeStart"]
-    if time_start is not None:
-        j["timeStart"] = "%02d:%02d:%02d" % (time_start.hour, time_start.minute, time_start.second)
-
-    time_end = row["TimeEnd"]
-    if time_end is not None:
-        j["timeEnd"] = "%02d:%02d:%02d" % (time_end.hour, time_end.minute, time_end.second)
-
-    duration = row["Duration"]
-    if duration is not None:
-        j["duration"] = "%02d:%02d:%02d" % (duration.hour, duration.minute, duration.second)
+        if row["Description2"] is not None:
+            j["metadataLanguage"] = "Hungarian"
+            j["contentsSummary"] = row["Description2"]
 
     return j
 

@@ -112,12 +112,14 @@ def make_solr_document(row):
     hashids = Hashids(salt="osacontent", min_length=8)
     j = make_json(row)
 
+    item_json = {'item_json_eng': j}
+
     identifier = hashids.encode(row["ContainerID"] * 1000 + int(row["SequenceNo"]))
 
     doc = {
         "id": identifier,
-        "item_json": json.dumps(j),
-        "item_json_e": base64.b64encode(json.dumps(j)),
+        "item_json": json.dumps(item_json),
+        "item_json_e": base64.b64encode(json.dumps(item_json)),
 
         "record_origin": "Archives",
         "record_origin_facet": "Archives",
@@ -162,7 +164,7 @@ def make_solr_document(row):
 
     if "titleOriginal" in j.keys():
         doc["title_original"] = j["titleOriginal"]
-        doc["title_original_search"] = j["titleOriginal"]
+        doc["title_search_hu"] = j["titleOriginal"]
 
     cdate = make_date_created(make_date(row["YearStart"], row["MonthStart"], row["DayStart"]),
                               make_date(row["YearEnd"], row["MonthEnd"], row["DayEnd"]))
