@@ -3,7 +3,7 @@ import sys
 import base64
 from hashids import Hashids
 import simplejson as json
-from common_folder_funcitons import make_date, make_date_created, remove_control_chars
+from common_folder_funcitons import make_date_created_display_av, make_date_created_search_av, remove_control_chars
 from common_archival_unit_functions import get_series_id, get_series_name
 from common_config import con, solr_interface
 
@@ -148,13 +148,24 @@ def make_solr_document(row):
         "primary_type_facet": "Moving Image"
     }
 
-    if row["YearProduction"] > 0:
-        doc["date_created"] = row["YearProduction"]
-        doc["date_created_facet"] = row["YearProduction"]
+    date_created_display = make_date_created_display_av(row["YearProduction"], row["MonthProduction"], row["DayProduction"], row["CircaSpan"])
+    if date_created_display != "":
+        doc["date_created"] = date_created_display
+    else:
+        date_created_display = make_date_created_display_av(row["YearAir"], row["MonthAir"], row["DayAir"], 0)
+        if date_created_display != "":
+            doc["date_created"] = date_created_display
 
-    cdate = make_date_created(make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"]), "")
-    if cdate != "":
-        doc["creation_date"] = cdate
+    date_created_search = make_date_created_search_av(row["YearProduction"], row["CircaSpan"])
+    if date_created_search:
+        doc["date_created_facet"] = date_created_search
+        doc["date_created_search"] = date_created_search
+    else:
+        date_created_search = make_date_created_search_av(row["YearAir"], 0)
+        if date_created_search != "":
+            doc["date_created_facet"] = date_created_search
+            doc["date_created_search"] = date_created_search
+
 
     if j_eng["contributors"]:
         for contributor in j_eng["contributors"]:
@@ -209,18 +220,18 @@ def make_json(row, lang='eng'):
         j["sequenceNumber"] = row["SequenceNo"]
         j["seriesReferenceCode"] = '-'.join((str(row["FondsID"]), str(row["SubfondsID"]), str(row["SeriesID"])))
 
-        if make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"]) != "":
-            j["dateFrom"] = make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"])
+        if make_date_created_display_av(row["YearProduction"], row["MonthProduction"], row["DayProduction"], row["CircaSpan"]) != "":
+            j["dateCreated"] = make_date_created_display_av(row["YearProduction"], row["MonthProduction"], row["DayProduction"], row["CircaSpan"])
 
         if row["Notes"] is not None:
             j["note"] = row["Notes"]
 
         j["dates"] = []
-        production_date = make_date(row["YearProduction"], row["MonthProduction"], row["DayProduction"])
+        production_date = make_date_created_display_av(row["YearProduction"], row["MonthProduction"], row["DayProduction"], row["CircaSpan"])
         if production_date != "":
             j["dates"].append({"dateType": "Date of Production", "date": production_date})
 
-        air_date = make_date(row["YearAir"], row["MonthAir"], row["DayAir"])
+        air_date = make_date_created_display_av(row["YearAir"], row["MonthAir"], row["DayAir"], 0)
         if air_date != "":
             j["dates"].append({"dateType": "Date Aired", "date": air_date})
 

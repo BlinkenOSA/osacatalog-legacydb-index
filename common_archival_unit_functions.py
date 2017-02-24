@@ -30,11 +30,31 @@ def get_series_id(fonds, subfonds, series):
     return hashids.encode(fonds * 1000000 + subfonds * 1000 + series)
 
 
-def make_date_created(row):
-    date = str(row["YearFrom"])
+def make_date_created_display(row):
+    if row["YearFrom"] > 0:
+        date = str(row["YearFrom"])
 
-    if row["YearTo"]:
-        date = date + " - " + str(row["YearTo"])
+        if row["YearTo"]:
+            if row["YearFrom"] != row["YearTo"]:
+                date = date + " - " + str(row["YearTo"])
+    else:
+        date = ""
+
+    return date
+
+
+def make_date_created_search(row):
+    date = []
+
+    if row["YearFrom"] > 0:
+        year_from = row["YearFrom"]
+
+        if row["YearTo"]:
+            year_to = row["YearTo"]
+            for year in xrange(year_from, year_to + 1):
+                date.append(year)
+        else:
+            date.append(str(year_from))
 
     return date
 

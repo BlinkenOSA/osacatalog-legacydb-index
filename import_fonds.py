@@ -5,7 +5,7 @@ from hashids import Hashids
 import simplejson as json
 from common_config import con, solr_interface
 from common_archival_unit_functions import select_isaar, select_languages, select_related_units, select_themes, \
-    select_extent, make_date_created
+    select_extent, make_date_created_display, make_date_created_search
 
 
 def main():
@@ -183,7 +183,9 @@ def make_solr_document(row):
         "description_level": "Fonds",
         "description_level_facet": "Fonds",
 
-        "creation_date": make_date_created(row),
+        "date_created": make_date_created_display(row),
+        "date_created_search": make_date_created_search(row),
+        "date_created_facet": make_date_created_search(row),
 
         "fonds": row["ID"],
         "fonds_sort": row["ID"],
@@ -204,10 +206,6 @@ def make_solr_document(row):
     if "creator" in j.keys():
         doc["creator"] = ", ".join(j["creator"])
         doc["creator_facet"] = j["creator"]
-
-    if row["YearFrom"] > 0:
-        doc["date_created"] = row["YearFrom"]
-        doc["date_created_facet"] = row["YearFrom"]
 
     themes = select_themes(row["ID"])
     if themes:

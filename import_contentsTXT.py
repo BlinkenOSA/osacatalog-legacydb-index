@@ -3,7 +3,7 @@ import sys
 from hashids import Hashids
 import simplejson as json
 import base64
-from common_folder_funcitons import make_date, make_date_created, get_level
+from common_folder_funcitons import get_level, make_date_created_display, make_date_created_search
 from common_archival_unit_functions import get_series_name, get_series_id
 from common_config import con, solr_interface
 
@@ -39,6 +39,7 @@ def main():
     contents.YearEnd,
     contents.MonthEnd,
     contents.DayEnd,
+    contents.CircaSpan,
     contents.Notes,
     contents.Identifier,
     contents.TranslatedTitle,
@@ -94,11 +95,7 @@ def make_json(row):
     j["containerType"] = row["ContainerType"]
     j["sequenceNumber"] = row["SequenceNo"]
 
-    if make_date(row["YearStart"], row["MonthStart"], row["DayStart"]) != "":
-        j["dateFrom"] = make_date(row["YearStart"], row["MonthStart"], row["DayStart"])
-
-    if make_date(row["YearEnd"], row["MonthEnd"], row["DayEnd"]) != "":
-        j["dateTo"] = make_date(row["YearEnd"], row["MonthEnd"], row["DayEnd"])
+    j["dateCreated"] = make_date_created_display(row)
 
     if row["Notes"] is not None:
         j["note"] = row["Notes"]
@@ -158,18 +155,18 @@ def make_solr_document(row):
         "primary_type_facet": "Textual"
     }
 
-    if row["YearStart"] > 0:
-        doc["date_created"] = row["YearStart"]
-        doc["date_created_facet"] = row["YearStart"]
+    date_created_display = make_date_created_display(row)
+    if date_created_display != "":
+        doc["date_created"] = date_created_display
+
+    date_created_search = make_date_created_search(row)
+    if date_created_search:
+        doc["date_created_facet"] = date_created_search
+        doc["date_created_search"] = date_created_search
 
     if "titleOriginal" in j.keys():
         doc["title_original"] = j["titleOriginal"]
         doc["title_search_hu"] = j["titleOriginal"]
-
-    cdate = make_date_created(make_date(row["YearStart"], row["MonthStart"], row["DayStart"]),
-                              make_date(row["YearEnd"], row["MonthEnd"], row["DayEnd"]))
-    if cdate != "":
-        doc["creation_date"] = cdate
 
     return doc
 

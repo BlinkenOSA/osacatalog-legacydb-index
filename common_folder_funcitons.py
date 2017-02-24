@@ -8,38 +8,102 @@ control_chars = ''.join(map(unichr, range(0, 32) + range(127, 160)))
 control_char_re = re.compile('[%s]' % re.escape(control_chars))
 
 
-def make_date(year, month, day):
-    output = ""
+def make_date_created_display(row):
+    date = ""
+
+    if row["CircaSpan"]:
+        date += "ca. "
+
+    if row["YearStart"] > 0:
+        date += str(row["YearStart"])
+        if 0 < row["MonthStart"] < 13:
+            date += "-%02d" % (row["MonthStart"])
+            if 0 < row["DayStart"] < 32:
+                date += "-%02d" % (row["DayStart"])
+
+    if row["YearEnd"] != row["YearStart"]:
+        if row["YearEnd"] > 0:
+            date += " - %02d" % (row["YearEnd"])
+            if 0 < row["MonthEnd"] < 13:
+                date += "-%02d" % (row["MonthEnd"])
+                if 0 < row["MonthEnd"] < 32:
+                    date += "-%02d" % (row["MonthEnd"])
+
+    return date
+
+
+def make_date_created_display_av(year, month, day, circa):
+    date = ""
+
+    if circa:
+        date += "ca. "
 
     if year > 0:
-        output += str(year)
+        date += str(year)
+        if 0 < month < 13:
+            date += "-%02d" % (month)
+            if 0 < day < 32:
+                date += "-%02d" % (day)
 
-    if 0 < month < 13:
-        output = output + '-' + str(month)
+    return date
+
+
+def make_date_created_search(row):
+    date = []
+
+    if row["CircaSpan"]:
+        circa = row["CircaSpan"]
     else:
-        return output
+        circa = 0
 
-    if 0 < day < 32:
-        output = output + '-' + str(day)
+    if row["YearStart"] > 0:
+        year_from = row["YearStart"]
     else:
-        return output
+        year_from = 0
 
-    return output
-
-
-def make_date_created(from_date, to_date):
-    output = ""
-    if from_date != "":
-        output = from_date
+    if row["YearEnd"] > 0:
+        year_to = row["YearEnd"]
     else:
-        return output
+        year_to = year_from
 
-    if to_date != "":
-        output = output + "-" + to_date
+    if circa == 0:
+        if year_from != 0:
+            if year_from < year_to:
+                for year in xrange(year_from, year_to + 1):
+                    date.append(year)
+            else:
+                for year in xrange(year_to, year_from + 1):
+                    date.append(year)
     else:
-        return output
+        if circa > 5:
+            circa = 5
+        if year_from != 0:
+            for year in xrange(year_from - circa, year_from + circa):
+                date.append(year)
 
-    return output
+    return date
+
+
+def make_date_created_search_av(year, circa):
+    date = []
+
+    if not circa:
+        circa = 0
+
+    if year <= 0:
+        year = 0
+
+    if circa == 0:
+        if year != 0:
+            date.append(year)
+    else:
+        if circa > 5:
+            circa = 5
+        if year != 0:
+            for y in xrange(year - circa, year + circa):
+                date.append(y)
+
+    return date
 
 
 def remove_control_chars(s):
