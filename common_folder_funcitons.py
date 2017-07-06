@@ -150,4 +150,7 @@ def count_duration(hours, minutes, seconds, lang='eng'):
         else:
             return "%s %s" % (seconds, s)
     else:
-        return "%s %s" % (minutes, m)
+        if minutes > 0:
+            return "%s %s" % (minutes, m)
+        else:
+            return None
