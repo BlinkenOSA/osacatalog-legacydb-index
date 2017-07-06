@@ -277,7 +277,9 @@ def make_json(row, lang='eng'):
 
         duration = row["Duration"]
         if duration is not None:
-            j["duration"] = count_duration(duration.hour, duration.minute, duration.second, lang)
+            d = count_duration(duration.hour, duration.minute, duration.second, lang)
+            if d:
+                j["duration"] = d
 
     else:
         j = {}
