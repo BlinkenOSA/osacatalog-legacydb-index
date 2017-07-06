@@ -132,3 +132,22 @@ def get_level(row):
         level.append("Item")
 
     return level[0]
+
+
+def count_duration(hours, minutes, seconds, lang='eng'):
+    if lang == 'eng':
+        m = 'min.'
+        s = 'sec.'
+    else:
+        m = 'p.'
+        s = 'mp.'
+
+    minutes += hours * 60
+
+    if seconds > 0:
+        if minutes > 0:
+            return "%s %s %s %s" % (minutes, m, seconds, s)
+        else:
+            return "%s %s" % (seconds, s)
+    else:
+        return "%s %s" % (minutes, m)

@@ -3,7 +3,8 @@ import sys
 import base64
 from hashids import Hashids
 import simplejson as json
-from common_folder_funcitons import make_date_created_display_av, make_date_created_search_av, remove_control_chars
+from common_folder_funcitons import make_date_created_display_av, make_date_created_search_av, remove_control_chars, \
+    count_duration
 from common_archival_unit_functions import get_series_id, get_series_name
 from common_config import con, solr_interface
 
@@ -166,6 +167,8 @@ def make_solr_document(row):
             doc["date_created_facet"] = date_created_search
             doc["date_created_search"] = date_created_search
 
+    if "duration" in j_eng:
+        doc["duration"] = j_eng["duration"]
 
     if j_eng["contributors"]:
         for contributor in j_eng["contributors"]:
@@ -249,9 +252,9 @@ def make_json(row, lang='eng'):
         if row["Language"] is not None:
             language.append(row["Language"])
 
-        lang = select_languages(row["ContainerID"], row["ContainerNo"])
-        if lang is not None:
-            for l in lang:
+        langs = select_languages(row["ContainerID"], row["ContainerNo"])
+        if langs is not None:
+            for l in langs:
                 language.append(l)
 
         if language is not None:
@@ -274,7 +277,7 @@ def make_json(row, lang='eng'):
 
         duration = row["Duration"]
         if duration is not None:
-            j["duration"] = "%02d:%02d:%02d" % (duration.hour, duration.minute, duration.second)
+            j["duration"] = count_duration(duration.hour, duration.minute, duration.second, lang)
 
     else:
         j = {}
@@ -282,6 +285,10 @@ def make_json(row, lang='eng'):
         if row["Description2"] is not None:
             j["metadataLanguage"] = "Hungarian"
             j["contentsSummary"] = row["Description2"]
+
+            duration = row["Duration"]
+            if duration is not None:
+                j["duration"] = count_duration(duration.hour, duration.minute, duration.second, lang)
 
     return j
 
