@@ -30,10 +30,7 @@ def main():
 
     for row in cursor:
         doc = make_solr_document(row)
-        solr_interface.add(doc)
-
-    solr_interface.commit()
-    solr_interface.optimize()
+        solr_interface.add([doc])
 
     print 'Import Fonds - Finished!'
 

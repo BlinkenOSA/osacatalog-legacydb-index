@@ -1,5 +1,5 @@
 import mysql.connector
-import sunburnt
+import pysolr
 
 config = {
     'host': 'localhost',
@@ -11,4 +11,4 @@ config = {
 
 con = mysql.connector.connect(**config)
 
-solr_interface = sunburnt.SolrInterface("http://localhost:8983/solr/osacatalog")
+solr_interface = pysolr.Solr("http://localhost:8983/solr/osacatalog")

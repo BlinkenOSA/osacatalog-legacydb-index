@@ -10,9 +10,10 @@ def main():
     args_fonds = args.fonds
 
     if args_fonds:
-        solr_interface.delete(queries=solr_interface.Q(fonds_esort=args_fonds))
-        solr_interface.commit()
-        solr_interface.optimize()
+        solr_interface.delete(q='fonds_esort=%s' % args_fonds, commit=False)
+
+    solr_interface.commit()
+    solr_interface.optimize()
 
     print "Finished!"
 
