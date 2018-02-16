@@ -58,7 +58,7 @@ def main():
 
     for row in cursor:
         doc = make_solr_document(row)
-        solr_interface.add(doc)
+        solr_interface.add([doc])
 
         if counter % 1000 == 0:
             solr_interface.commit()
@@ -139,11 +139,11 @@ def make_solr_document(row):
         "container_type": row["ContainerType"],
         "container_type_esort": row["ContainerTypeID"],
 
-        "container_number": row["ContainerNo"],
-        "container_number_sort": row["ContainerNo"],
+        "container_number": int(row["ContainerNo"]),
+        "container_number_sort": int(row["ContainerNo"]),
 
-        "sequence_number": row["SequenceNo"],
-        "sequence_number_sort": row["SequenceNo"],
+        "sequence_number": int(row["SequenceNo"]),
+        "sequence_number_sort": int(row["SequenceNo"]),
 
         "series_id": get_series_id(row["FondsID"], row["SubfondsID"], row["SeriesID"]),
         "series_name": get_series_name(row["FondsID"], row["SubfondsID"], row["SeriesID"]),

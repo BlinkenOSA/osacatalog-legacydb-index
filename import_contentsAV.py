@@ -80,7 +80,7 @@ def main():
     for row in cursor:
         doc = make_solr_document(row)
         try:
-            solr_interface.add(doc)
+            solr_interface.add([doc])
         except ValueError:
             print doc
 
@@ -132,14 +132,14 @@ def make_solr_document(row):
         "container_type": row["ContainerType"],
         "container_type_esort": row["ContainerTypeID"],
 
-        "container_number": row["ContainerNo"],
-        "container_number_sort": row["ContainerNo"],
+        "container_number": int(row["ContainerNo"]),
+        "container_number_sort": int(row["ContainerNo"]),
 
         "contents_summary_search": remove_control_chars(row["Description"]) if row["Description"] else None,
         "contents_summary_search_hu": remove_control_chars(row["Description2"]) if row["Description2"] else None,
 
-        "sequence_number": row["SequenceNo"],
-        "sequence_number_sort": row["SequenceNo"],
+        "sequence_number": int(row["SequenceNo"]),
+        "sequence_number_sort": int(row["SequenceNo"]),
 
         "series_id": get_series_id(row["FondsID"], row["SubfondsID"], row["SeriesID"]),
         "series_name": get_series_name(row["FondsID"], row["SubfondsID"], row["SeriesID"]),
