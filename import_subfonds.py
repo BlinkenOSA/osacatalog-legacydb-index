@@ -219,7 +219,7 @@ def make_solr_document(row):
         if j_hu["title"]:
             doc['title_search_hu'] = j_hu["title"]
             doc['title_original'] = j_hu["title"]
-            doc['title_original_e'] = json.dumps(j_hu["title"])[1:-1]
+            doc['title_original_e'] = j_hu["title"]
         else:
             doc['title_original_e'] = ""
 
