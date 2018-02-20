@@ -173,7 +173,7 @@ def make_solr_document(row):
         "reference_code_sort": j["referenceCode"],
 
         "title": j["title"],
-        "title_e": json.dumps(j["title"])[1:-1],
+        "title_e": j["title"],
         "title_search": j["title"],
         "title_sort": j["title"],
 

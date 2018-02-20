@@ -55,7 +55,7 @@ def main():
 
     for row in cursor:
         doc = make_solr_document(row)
-        solr_interface.add(doc)
+        solr_interface.add([doc])
 
         if counter % 1000 == 0:
             solr_interface.commit()
