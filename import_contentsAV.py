@@ -77,6 +77,8 @@ def main():
     cursor = con.cursor(dictionary=True, buffered=True)
     cursor.execute(sql)
 
+    # solr_interface.delete(q='*:*')
+
     for row in cursor:
         doc = make_solr_document(row)
         try:
@@ -119,6 +121,12 @@ def make_solr_document(row):
 
         "description_level": "Item",
         "description_level_facet": "Item",
+
+        "archival_reference_number": "HU OSA %s-%s-%s:%s/%s" % (str(row["FondsID"]),
+                                                                str(row["SubfondsID"]),
+                                                                str(row["SeriesID"]),
+                                                                str(int(row["ContainerNo"])),
+                                                                str(int(row["SequenceNo"]))),
 
         "title": j_eng["title"],
         "title_e": json.dumps(j_eng["title"])[1:-1],

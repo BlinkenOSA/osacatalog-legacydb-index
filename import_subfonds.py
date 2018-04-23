@@ -176,6 +176,8 @@ def make_solr_document(row):
         "reference_code": j["referenceCode"],
         "reference_code_sort": j["referenceCode"],
 
+        "archival_reference_number": "HU OSA %s-%s" % (str(row["FondsID"]), str(row["ID"])),
+
         "title": j["title"],
         "title_e": j["title"],
         "title_search": j["title"],

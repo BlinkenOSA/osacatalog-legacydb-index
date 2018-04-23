@@ -127,6 +127,12 @@ def make_solr_document(row):
         "description_level": j["level"],
         "description_level_facet": j["level"],
 
+        "archival_reference_number": "HU OSA %s-%s-%s:%s/%s" % (str(row["FondsID"]),
+                                                                str(row["SubfondsID"]),
+                                                                str(row["SeriesID"]),
+                                                                str(int(row["ContainerNo"])),
+                                                                str(int(row["SequenceNo"]))),
+
         "title": j["title"],
         "title_e": json.dumps(j["title"])[1:-1],
         "title_search": j["title"],
